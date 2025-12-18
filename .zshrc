@@ -10,6 +10,21 @@ fi
 # Source/Loads zinit
 source "${ZINIT_HOME}/zinit.zsh"
 
+# Load the required system packages
+# Define a lock file based on the current date
+LAST_CHECK_FILE="/tmp/zsh_update_check_$(date +%Y%m%d)"
+
+# Only run if the file doesn't exist
+if [[ ! -f "$LAST_CHECK_FILE" ]]; then
+  echo "📅 Daily config check running..."
+  
+  # Run the installer
+  bootstrap_packages
+  
+  # Create the file so we don't check again today
+  touch "$LAST_CHECK_FILE"
+fi
+
 # Add in zsh plugins
 zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-completions
