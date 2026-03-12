@@ -1,3 +1,6 @@
+# --- 0. PATH ---
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:$HOME/.local/bin:$HOME/bin:$HOME/.opencode/bin:$PATH"
+
 # --- 1. Zinit Setup ---
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 if [ ! -d "$ZINIT_HOME" ]; then
@@ -29,6 +32,24 @@ autoload -U compinit && compinit
 bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
 
+# -- Aliases
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  alias ls='ls -G'
+else
+  alias ls='ls --color'
+fi
+
+# -- Shell Integration
+if command -v fzf &> /dev/null; then
+  local fzf_minor
+  fzf_minor=$(fzf --version | cut -d. -f2)
+  [[ "$fzf_minor" -ge 48 ]] && eval "$(fzf --zsh)"
+fi
+
+# -- Environment variables
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
 # --- 6. Load Custom Configs (functions, aliases, etc.) ---
 export ZSH_CONFIG_DIR="$HOME/.zsh"
 if [[ -d "$ZSH_CONFIG_DIR" ]]; then
@@ -46,46 +67,8 @@ if [[ ! -f "$LAST_CHECK_FILE" ]]; then
     echo "📅 Daily system check..."
     bootstrap_packages
     touch "$LAST_CHECK_FILE"
-  else
-    # Optional: Debug message if it fails
-    # echo "⚠️ bootstrap_packages function not found. Check ~/.zsh/setup.zsh"
   fi
 fi
-# Add in zsh plugins
-zinit light zsh-users/zsh-syntax-highlighting
-zinit light zsh-users/zsh-completions
-zinit light zsh-users/zsh-autosuggestions
 
-# Load completions
-autoload -U compinit && compinit
-
-# Keybinds
-bindkey '^p' history-seach-backward
-bindkey '^n' history-search-forward
-
-# History
-HISTSIZE=5000
-HISTFILE=~/.zsh_history
-SAVEHIST=$HISTSIZE
-HISTDUP=erase
-setopt appendhistory
-setopt sharehistory
-setopt hist_ignore_space
-setopt hist_ignore_all_dups
-setopt hist_save_no_dups
-setopt hist_ignore_dups
-setopt hist_find_no_dups
-
-# Completion styling
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
-zstyle ':completion:*' list-color "${(s.:.)LS_COLORS}"
-
-# Aliases
-alias ls='ls --color'
-
-# Shell integrations
-eval "$(fzf --zsh)"
-
-# nvm (Node Version Manager) setup
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+# --- 8. Prompt ---
+command -v starship &> /dev/null && eval "$(starship init zsh)"
