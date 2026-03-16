@@ -1,7 +1,7 @@
 t() {
   local session_name=${PWD:t}
 
-  session_name=${session_name//[^azA-Z0-9_-]/_}
+  session_name=${session_name//[^a-zA-Z0-9_-]/_}
 
   if [[ -n "$TMUX" ]]; then
     print -P "%F{yellow}Already inside tmux session%f"
@@ -67,8 +67,7 @@ tka() {
     return 1
   fi
 
-  print -n "Kill all tmux sessions? [y/N] "
-  read -r answer
+  read "answer?Kill all tmux sessions? [y/N] "
   if [[ "$answer" =~ ^[Yy]$ ]]; then
     tmux kill-server && print -P "%F{green}All tmux sessions killed%f"
   else
