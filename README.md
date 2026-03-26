@@ -64,6 +64,7 @@ On the next shell startup, `bootstrap_packages` runs automatically and installs:
 | `fd` | Fast `find` alternative |
 | `lazygit` | Terminal UI for git |
 | `opencode` | AI coding agent |
+| `odin` | Odin programming language |
 | TPM | Tmux plugin manager |
 
 Neovim plugins are managed by [LazyVim](https://lazyvim.org) and install automatically on first launch.

@@ -167,6 +167,82 @@ install_starship() {
 }
 
 # -----------------------------------------------------------------------------
+# 7. HELPER: INSTALL ODIN
+# -----------------------------------------------------------------------------
+install_odin() {
+  local ODIN_DIR="$HOME/.local/share/odin"
+  local ODIN_BIN="$HOME/.local/bin/odin"
+
+  if command -v odin &> /dev/null; then
+    if [[ "$1" == "--update" ]]; then
+      echo "🔄 Updating odin..."
+      if [[ "$OSTYPE" == "darwin"* ]]; then
+        brew upgrade odin
+      else
+        ( cd "$ODIN_DIR" && git pull && git restore --source=HEAD :/ && make CXX="clang++ $(
+          local gxy_ver
+          gxy_ver=$(dpkg -l 'libstdc++-*-dev' 2>/dev/null | awk '/^ii/{print $2}' | grep -o '[0-9]*' | sort -n | tail -1)
+          local libstdcxx_path
+          libstdcxx_path=$(find /usr/lib/gcc -name "libstdc++.so" 2>/dev/null | head -1 | xargs dirname)
+          [[ -d "/usr/include/c++/${gxy_ver}" ]] && echo "-I/usr/include/c++/${gxy_ver} -I/usr/include/x86_64-linux-gnu/c++/${gxy_ver} -L${libstdcxx_path}"
+        )" )
+        ln -sf "$ODIN_DIR/odin" "$ODIN_BIN"
+        echo "✅ odin updated."
+      fi
+    else
+      echo "✅ odin is installed."
+    fi
+    return 0
+  fi
+
+  echo "⬇️  odin not found. Installing..."
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    brew install odin
+  else
+    # Odin requires clang/llvm to build
+    if ! command -v clang &> /dev/null; then
+      echo "⬇️  Installing clang (required to build odin)..."
+      if [[ -f /etc/debian_version ]]; then
+        sudo apt update && sudo apt install -y clang llvm
+      elif [[ -f /etc/redhat-release ]]; then
+        sudo dnf install -y clang llvm
+      elif [[ -f /etc/arch-release ]]; then
+        sudo pacman -S --noconfirm clang llvm
+      else
+        echo "❌ Cannot auto-install clang on this OS. Please install it manually."
+        return 1
+      fi
+    fi
+
+    # Determine the best CXX flags for building Odin on Debian/Ubuntu,
+    # where clang may not find the GCC-provided C++ headers automatically.
+    local cxx_flags=""
+    if [[ -f /etc/debian_version ]]; then
+      local gxx_ver
+      gxy_ver=$(dpkg -l 'libstdc++-*-dev' 2>/dev/null | awk '/^ii/{print $2}' | grep -o '[0-9]*' | sort -n | tail -1)
+      if [[ -d "/usr/include/c++/${gxy_ver}" ]]; then
+        local libstdcxx_path
+        libstdcxx_path=$(find /usr/lib/gcc -name "libstdc++.so" 2>/dev/null | head -1 | xargs dirname)
+        cxx_flags="-I/usr/include/c++/${gxy_ver} -I/usr/include/x86_64-linux-gnu/c++/${gxy_ver}"
+        [[ -n "$libstdcxx_path" ]] && cxx_flags="$cxx_flags -L${libstdcxx_path}"
+      fi
+    fi
+
+    mkdir -p "$HOME/.local/bin" "$HOME/.local/share"
+    GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/odin-lang/Odin "$ODIN_DIR"
+    # Disable the LFS filter so vendor files (raylib, SDL2, etc.) check out correctly
+    # without requiring git-lfs. The only files skipped are Windows-only .lib/.dll blobs.
+    git -C "$ODIN_DIR" config --local filter.lfs.smudge "cat"
+    git -C "$ODIN_DIR" config --local filter.lfs.process ""
+    git -C "$ODIN_DIR" config --local filter.lfs.required false
+    git -C "$ODIN_DIR" restore --source=HEAD :/
+    ( cd "$ODIN_DIR" && make CXX="clang++ ${cxx_flags}" )
+    ln -sf "$ODIN_DIR/odin" "$ODIN_BIN"
+    echo "✅ odin installed to $ODIN_BIN"
+  fi
+}
+
+# -----------------------------------------------------------------------------
 # MAIN: BOOTSTRAP PACKAGES
 # -----------------------------------------------------------------------------
 bootstrap_packages() {
@@ -258,6 +334,7 @@ bootstrap_packages() {
   install_lazygit "$1"
   install_opencode "$1"
   install_starship "$1"
+  install_odin "$1"
   
   echo "🎉 System check complete."
 }
