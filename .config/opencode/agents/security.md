@@ -1,7 +1,7 @@
 ---
 description: Security-focused code review for vulnerabilities
 mode: subagent
-model: gpt-5-mini
+model: github-copilot/gpt-5-mini
 temperature: 0.1
 tools:
   write: false
